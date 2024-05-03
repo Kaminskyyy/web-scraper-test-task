@@ -25,7 +25,7 @@ export class ParseService {
       const name = containsNameAndRole.find('.speakers-list_item-heading').text();
       const role = containsNameAndRole.find('.speakers-list_item-heading').parent().next().text();
 
-      // Extract socail networl links
+      // Extract sociial network links
       const socialNetworkLinks: string[] = [];
       const containsSocailNetworkLinks = containsNameAndRole.next();
 
