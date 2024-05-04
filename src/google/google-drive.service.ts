@@ -1,12 +1,12 @@
 import * as fs from 'fs';
 import { google } from 'googleapis';
 import { GoogleAuthService } from './google-auth.service';
-import tmp from 'tmp';
+import { Format } from '../parse/interfaces/formats.interface';
 
 export class GoogleDriveService {
   private static drive = google.drive({ version: 'v3', auth: GoogleAuthService.getAuth() });
 
-  static async uploadFile(tmpFileName: string, actualFileName: string, format: 'json' | 'csv' | 'xlsx'): Promise<void> {
+  static async uploadFile(tmpFileName: string, actualFileName: string, format: Format): Promise<void> {
     try {
       const response = await this.makeUploadRequest(tmpFileName, actualFileName, format);
       console.log('RESPONSE: ', response);
@@ -15,7 +15,7 @@ export class GoogleDriveService {
     }
   }
 
-  private static async makeUploadRequest(tmpFileName: string, actualFileName: string, format: 'json' | 'csv' | 'xlsx') {
+  private static async makeUploadRequest(tmpFileName: string, actualFileName: string, format: Format) {
     let mimeType = '';
 
     switch (format) {
@@ -26,8 +26,8 @@ export class GoogleDriveService {
         mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
         break;
       case 'csv':
-        // TODO
-        throw new Error('unsupported forma: CSV');
+        mimeType = 'text/csv';
+        break;
       default:
         throw new Error('unknown format');
     }

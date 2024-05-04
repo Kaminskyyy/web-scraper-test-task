@@ -9,21 +9,24 @@ export class ParseService {
   static async parse(user: User) {
     const pageData = await ScrapeService.parsePage();
 
-    const formats: Format[] = ['json', 'xlsx'];
+    const formats: Format[] = ['json', 'xlsx', 'csv'];
+    const fileName = `${user.email}--${Date.now()}`;
 
-    for (let i = 0; i < 2; i++) {
-      const fileName = `${user.email}--${Date.now()}.${formats[i]}`;
-      const tmpFile = FileFormatService.to(formats[i], pageData);
+    formats.forEach(async (format) => {
+      const fileNameWithFormat = fileName + `.${format}`;
+      const tmpFile = await FileFormatService.to(format, pageData);
 
       try {
-        await GoogleDriveService.uploadFile(tmpFile.name, fileName, formats[i]);
+        await GoogleDriveService.uploadFile(tmpFile.name, fileNameWithFormat, format);
       } catch (error) {
-        throw error;
+        console.log(error);
       } finally {
         tmpFile.removeCallback();
       }
-    }
+    });
 
     await ParseReqeustsService.addParseRequest(user);
+
+    return pageData;
   }
 }

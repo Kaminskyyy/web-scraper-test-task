@@ -15,7 +15,7 @@ const app = express();
 app.use(express.json());
 app.use(
   session({
-    secret: 'sdgsd',
+    secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,
     cookie: {

@@ -4,3 +4,7 @@ export interface Person {
   role: string;
   socialNetworkLinks: string[];
 }
+
+export interface PersonFlattened extends Omit<Person, 'socialNetworkLinks'> {
+  socialNetworkLinks: string;
+}
