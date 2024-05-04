@@ -5,6 +5,7 @@ import { AuthStrategy } from '../auth/strategies/strategy-name.enum';
 import { ParseService } from './parse.service';
 import { ParseReqeustsService } from './parse-requests.service';
 import { User } from '../db/entity/user.entity';
+import { GoogleDriveService } from '../google/google-drive.service';
 
 const route = Router();
 
@@ -19,5 +20,19 @@ route.get(
     res.json({ pageData });
   }
 );
+
+route.get('/test-upload', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const obj = {
+      name: 'qwerrty',
+      age: 40
+    };
+
+    await GoogleDriveService.uploadFile(obj, 'test-object.json');
+    res.sendStatus(200);
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default route;
