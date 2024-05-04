@@ -1,21 +1,30 @@
 import * as fs from 'fs';
-import { google } from 'googleapis';
+import { drive_v3, google } from 'googleapis';
 import { GoogleAuthService } from './google-auth.service';
 import { Format } from '../parse/interfaces/formats.interface';
+import { UploadFileResponse } from './interfaces/upload-file-response.interface';
 
 export class GoogleDriveService {
   private static drive = google.drive({ version: 'v3', auth: GoogleAuthService.getAuth() });
 
-  static async uploadFile(tmpFileName: string, actualFileName: string, format: Format): Promise<void> {
+  static async uploadFile(
+    tmpFileName: string,
+    actualFileName: string,
+    format: Format
+  ): Promise<UploadFileResponse | undefined> {
     try {
-      const response = await this.makeUploadRequest(tmpFileName, actualFileName, format);
-      console.log('RESPONSE: ', response);
+      return await this.makeUploadRequest(tmpFileName, actualFileName, format);
     } catch (error) {
       console.log(error);
+      throw error;
     }
   }
 
-  private static async makeUploadRequest(tmpFileName: string, actualFileName: string, format: Format) {
+  private static async makeUploadRequest(
+    tmpFileName: string,
+    actualFileName: string,
+    format: Format
+  ): Promise<UploadFileResponse> {
     let mimeType = '';
 
     switch (format) {
@@ -42,7 +51,7 @@ export class GoogleDriveService {
       parents: [process.env.GOOGLE_DRIVE_TARGET_FOLDER_ID!]
     };
 
-    const fields = 'id,name';
+    const fields = 'id,name,webViewLink';
 
     const { data } = await this.drive.files.create({
       media,

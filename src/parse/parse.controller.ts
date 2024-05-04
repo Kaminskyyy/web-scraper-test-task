@@ -16,9 +16,9 @@ route.get(
   passport.authenticate(AuthStrategy.JWT),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const pageData = await ParseService.parse(req.user as User);
+      const results = await ParseService.parse(req.user as User);
 
-      res.status(200).json(pageData);
+      res.status(200).json(results);
     } catch (error) {
       next(error);
     }
