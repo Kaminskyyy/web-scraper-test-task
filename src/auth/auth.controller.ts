@@ -2,49 +2,49 @@ import { NextFunction, Request, Response, Router } from 'express';
 import validate from '../middleware/validation.middleware';
 import { UserSignUpDto } from './dto/user-sign-up.dto';
 import { UserLoginDto } from './dto/user.login.dto';
-import { UsersService } from '../users/users.service';
 import passport from 'passport';
-import { JwtService } from './jwt.service';
 import checkSession from '../middleware/check-session.middleware';
 import { AuthStrategy } from './strategies/strategy-name.enum';
+import { AuthService } from './auth.service';
+import { User } from '../db/entity/user.entity';
 
 const route = Router();
 
-route.post('/sign-up', validate('body', UserSignUpDto), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const user = await UsersService.create(req.body);
-    const jwt = JwtService.create(user.id);
-
-    res.status(201).json({ user, access_token: jwt });
-  } catch (error) {
-    next(error);
-  }
-});
-
 route.post(
-  '/login',
-  validate('body', UserLoginDto),
-  passport.authenticate(AuthStrategy.LOCAL),
-  async (req: Request, res: Response, next: NextFunction) => {
+  '/sign-up',
+  validate('body', UserSignUpDto),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = req.user?.id!;
-      if (!userId) throw new Error('User session is not set');
+      const response = await AuthService.signUp(req.body);
 
-      const jwt = JwtService.create(userId);
-
-      res.status(200).send({
-        user: req.user,
-        access_token: jwt
-      });
+      res.status(201).json(response);
     } catch (error) {
       next(error);
     }
   }
 );
 
-route.get('/logout', checkSession, passport.authenticate(AuthStrategy.JWT), (req: Request, res: Response) => {
+route.post(
+  '/login',
+  validate('body', UserLoginDto),
+  passport.authenticate(AuthStrategy.LOCAL),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user;
+      if (!user) throw new Error('User session is not set');
+
+      const response = AuthService.login(req.user as User);
+
+      res.status(200).send(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+route.get('/logout', checkSession, passport.authenticate(AuthStrategy.JWT), (req: Request, res: Response): void => {
   req.logout((error) => {
-    if (error) return res.sendStatus(400);
+    if (error) return res.sendStatus(500);
     res.sendStatus(200);
   });
 });
