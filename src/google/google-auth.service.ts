@@ -1,12 +1,13 @@
-import { google } from 'googleapis';
-import path from 'path';
+import { JWT } from 'google-auth-library';
 
-const keyFilePath = path.join(__dirname, './../../src/google/credentials/google-credentials.json');
+const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
 const scopes = ['https://www.googleapis.com/auth/drive'];
 
-const auth = new google.auth.GoogleAuth({
-  keyFile: keyFilePath,
-  scopes: scopes
+const auth = new JWT({
+  email: clientEmail,
+  key: privateKey,
+  scopes
 });
 
 export class GoogleAuthService {

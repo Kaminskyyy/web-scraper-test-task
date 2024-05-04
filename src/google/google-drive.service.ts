@@ -1,39 +1,55 @@
 import * as fs from 'fs';
 import { google } from 'googleapis';
 import { GoogleAuthService } from './google-auth.service';
+import tmp from 'tmp';
 
 export class GoogleDriveService {
-  static async uploadFile(file: any, fileName: string) {
-    const json = JSON.stringify(file);
+  private static drive = google.drive({ version: 'v3', auth: GoogleAuthService.getAuth() });
 
-    const writableStream = fs.createWriteStream(fileName);
-    writableStream.write(json);
-    writableStream.end();
+  static async uploadFile(tmpFileName: string, actualFileName: string, format: 'json' | 'csv' | 'xlsx'): Promise<void> {
+    try {
+      const response = await this.makeUploadRequest(tmpFileName, actualFileName, format);
+      console.log('RESPONSE: ', response);
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
-    const fileMetadata = {
-      name: fileName,
-      parents: ['18p5fiWJDYP30G8pb0BAi23ivdG57vpJu']
-    };
+  private static async makeUploadRequest(tmpFileName: string, actualFileName: string, format: 'json' | 'csv' | 'xlsx') {
+    let mimeType = '';
+
+    switch (format) {
+      case 'json':
+        mimeType = 'application/json';
+        break;
+      case 'xlsx':
+        mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        break;
+      case 'csv':
+        // TODO
+        throw new Error('unsupported forma: CSV');
+      default:
+        throw new Error('unknown format');
+    }
 
     const media = {
-      mimeType: 'application/json',
-      body: fs.createReadStream(fileName)
+      mimeType: mimeType,
+      body: fs.createReadStream(tmpFileName)
     };
 
-    const { data } = await google.drive({ version: 'v3', auth: GoogleAuthService.getAuth() }).files.create({
-      media: {
-        mimeType: 'application/json',
-        body: fs.createReadStream(fileName)
-      },
-      requestBody: {
-        name: fileName,
-        parents: ['1skVbEKFLH0axBJreCm5qioMF-y5ld5Zb']
-      },
-      fields: 'id,name'
+    const requestBody = {
+      name: actualFileName,
+      parents: [process.env.GOOGLE_DRIVE_TARGET_FOLDER_ID!]
+    };
+
+    const fields = 'id,name';
+
+    const { data } = await this.drive.files.create({
+      media,
+      requestBody,
+      fields
     });
 
-    console.log('RESPONSE: ', data);
-
-    fs.unlinkSync(fileName);
+    return data;
   }
 }
