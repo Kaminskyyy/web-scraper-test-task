@@ -17,6 +17,10 @@ route.post(
     try {
       const response = await AuthService.signUp(req.body);
 
+      await new Promise((resolve, reject) => {
+        req.login({ id: response.user.id } as User, (error) => (error ? reject(error) : resolve(null)));
+      });
+
       res.status(201).json(response);
     } catch (error) {
       next(error);
