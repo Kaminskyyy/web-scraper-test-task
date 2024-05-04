@@ -1,49 +1,29 @@
-import axios from 'axios';
-import * as cheerio from 'cheerio';
+import { User } from '../db/entity/user.entity';
+import { GoogleDriveService } from '../google/google-drive.service';
+import { FileFormatService } from './file-format.service';
+import { Format } from './interfaces/formats.interface';
+import { ParseReqeustsService } from './parse-requests.service';
+import { ScrapeService } from './scrape.service';
 
 export class ParseService {
-  static async getPageContent(): Promise<string> {
-    const page = await axios.get('https://interaction24.ixda.org/');
+  static async parse(user: User) {
+    const pageData = await ScrapeService.parsePage();
 
-    return page.data;
-  }
+    const formats: Format[] = ['json', 'xlsx'];
 
-  static async parsePage() {
-    const htmlContent = await this.getPageContent();
-    const $ = cheerio.load(htmlContent);
+    for (let i = 0; i < 2; i++) {
+      const fileName = `${user.email}--${Date.now()}.${formats[i]}`;
+      const tmpFile = FileFormatService.to(formats[i], pageData);
 
-    const peopleList: any[] = [];
+      try {
+        await GoogleDriveService.uploadFile(tmpFile.name, fileName, formats[i]);
+      } catch (error) {
+        throw error;
+      } finally {
+        tmpFile.removeCallback();
+      }
+    }
 
-    // Id of list items
-    $('#w-node-_9dfda272-5d3d-d6b7-7323-35abbf10bf89-37fff3e9').each((index, element) => {
-      // Extract image link
-      const imageWrapper = $(element).find('.speakers-list_item-image-wrapper');
-      const imageLink = imageWrapper.find('img').attr('src');
-
-      // Extract name and role
-      const containsNameAndRole = imageWrapper.next();
-      const name = containsNameAndRole.find('.speakers-list_item-heading').text();
-      const role = containsNameAndRole.find('.speakers-list_item-heading').parent().next().text();
-
-      // Extract sociial network links
-      const socialNetworkLinks: string[] = [];
-      const containsSocailNetworkLinks = containsNameAndRole.next();
-
-      containsSocailNetworkLinks.find('a').each((index, element) => {
-        const link = $(element);
-        if (!link.hasClass('w-condition-invisible')) {
-          socialNetworkLinks.push(link.attr('href')!);
-        }
-      });
-
-      peopleList.push({
-        image: 'https://interaction24.ixda.org' + imageLink?.slice(2),
-        name,
-        role,
-        socialNetworkLinks
-      });
-    });
-
-    return peopleList;
+    await ParseReqeustsService.addParseRequest(user);
   }
 }
