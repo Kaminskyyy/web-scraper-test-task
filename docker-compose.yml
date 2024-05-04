@@ -1,0 +1,30 @@
+version: '3.5'
+
+services:
+  database:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_USER=admin
+      - POSTGRES_DB=web-scraper
+    container_name: database
+    volumes:
+      - web-scraper-pg-data:/var/lib/postgresql/data
+
+  web_scraper_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: web-scraper-app
+    environment:
+      - PORT=3000
+      - DB_PORT=5432
+      - DB_HOST=database
+    ports:
+      - '3000:3000'
+    depends_on:
+      - database
+
+volumes:
+  web-scraper-pg-data:
