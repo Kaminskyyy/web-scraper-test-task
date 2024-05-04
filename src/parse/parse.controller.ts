@@ -27,6 +27,8 @@ route.get(
 
 route.get(
   '/parse-requests',
+  checkSession,
+  passport.authenticate(AuthStrategy.JWT),
   validate('query', ParseRequestsQueryDto),
   async (req: Request, res: Response, next: NextFunction) => {
     const page = req.query.page as unknown as number | undefined;
